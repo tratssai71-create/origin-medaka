@@ -231,11 +231,37 @@
         <div class="row"><span>商品小計</span><span>${formatPrice(total)}</span></div>
         <div class="row"><span>送料</span><span>${formatPrice(shipping)}</span></div>
         <div class="row total"><span>合計（税込）</span><span class="total">${formatPrice(total + shipping)}</span></div>
-        <a href="${BASE}purchase-guide/index.html" class="btn btn-gold btn-block" style="margin-top:20px;">購入手続きへ進む</a>
+        <button id="checkout-btn" class="btn btn-gold btn-block" style="margin-top:20px;">購入手続きへ進む</button>
+        <p class="form-hint" id="checkout-error" style="color:var(--red);"></p>
       </div>`;
     root.querySelectorAll('[data-remove-cart]').forEach(btn => {
       btn.addEventListener('click', () => { removeFromCart(btn.dataset.removeCart); renderCartPage(); });
     });
+    document.getElementById('checkout-btn')?.addEventListener('click', startCheckout);
+  }
+
+  async function startCheckout() {
+    const btn = document.getElementById('checkout-btn');
+    const errEl = document.getElementById('checkout-error');
+    const cart = store.get(CART_KEY);
+    if (!cart.length) return;
+    btn.disabled = true;
+    btn.textContent = '処理中…';
+    if (errEl) errEl.textContent = '';
+    try {
+      const res = await fetch(`${BASE}api/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cart })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || '決済ページの作成に失敗しました');
+      location.href = data.url;
+    } catch (err) {
+      if (errEl) errEl.textContent = err.message;
+      btn.disabled = false;
+      btn.textContent = '購入手続きへ進む';
+    }
   }
 
   /* ---------------- favorites page ---------------- */
@@ -313,5 +339,5 @@
     renderProductDetail();
   });
 
-  window.OM = { addToCart, removeFromCart, toggleFavorite, isFavorite, isInCart, renderProductGrid, productCardHTML, formatPrice, toast, store, CART_KEY, FAV_KEY, getProduct };
+  window.OM = { addToCart, removeFromCart, toggleFavorite, isFavorite, isInCart, renderProductGrid, productCardHTML, formatPrice, toast, store, CART_KEY, FAV_KEY, getProduct, updateBadges };
 })();

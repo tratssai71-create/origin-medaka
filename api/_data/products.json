@@ -1,0 +1,74 @@
+[
+  {
+    "id": "actual-001",
+    "name": "極上三色ラメ幹之",
+    "price": 38000,
+    "image": "assets/img/products/actual-001.jpg",
+    "stock": 1,
+    "active": true
+  },
+  {
+    "id": "actual-002",
+    "name": "黄金ヒカリ体型 天女",
+    "price": 24000,
+    "image": "assets/img/products/actual-002.jpg",
+    "stock": 1,
+    "active": true
+  },
+  {
+    "id": "actual-003",
+    "name": "紅白透明鱗 極上ペア",
+    "price": 52000,
+    "image": "assets/img/products/actual-003.jpg",
+    "stock": 1,
+    "active": true
+  },
+  {
+    "id": "actual-004",
+    "name": "深海ラメ幹之 SSS",
+    "price": 32000,
+    "image": "assets/img/products/actual-004.jpg",
+    "stock": 0,
+    "active": false
+  },
+  {
+    "id": "image-001",
+    "name": "幹之メダカ ペア",
+    "price": 3800,
+    "image": "assets/img/products/image-001.jpg",
+    "stock": 15,
+    "active": true
+  },
+  {
+    "id": "image-002",
+    "name": "楊貴妃メダカ ペア",
+    "price": 2800,
+    "image": "assets/img/products/image-002.jpg",
+    "stock": 20,
+    "active": true
+  },
+  {
+    "id": "image-003",
+    "name": "ブラックダイヤ ペア",
+    "price": 4800,
+    "image": "assets/img/products/image-003.jpg",
+    "stock": 8,
+    "active": true
+  },
+  {
+    "id": "image-004",
+    "name": "白虎メダカ ペア",
+    "price": 3500,
+    "image": "assets/img/products/image-004.jpg",
+    "stock": 12,
+    "active": true
+  },
+  {
+    "id": "image-005",
+    "name": "蒼淵",
+    "price": 1000,
+    "image": "assets/img/products/image-005.jpg",
+    "stock": 1,
+    "active": true
+  }
+]
