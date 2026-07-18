@@ -20,6 +20,7 @@ module.exports = async (req, res) => {
   const baseUrl = `https://${req.headers.host}`;
 
   let line_items;
+  let totalQty = 0;
   try {
     line_items = items.map(({ id, qty }) => {
       const p = productMap.get(id);
@@ -27,6 +28,7 @@ module.exports = async (req, res) => {
       if (!p || !p.active) {
         throw new Error(`商品が見つからないか販売終了です: ${id}`);
       }
+      totalQty += quantity;
       return {
         quantity,
         price_data: {
@@ -44,6 +46,7 @@ module.exports = async (req, res) => {
   }
 
   const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+  const shippingAmount = 1500 + (totalQty - 1) * 300;
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -53,7 +56,7 @@ module.exports = async (req, res) => {
         {
           shipping_rate_data: {
             type: 'fixed_amount',
-            fixed_amount: { amount: 1500, currency: 'jpy' },
+            fixed_amount: { amount: shippingAmount, currency: 'jpy' },
             display_name: '全国一律送料'
           }
         }

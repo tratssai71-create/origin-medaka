@@ -212,10 +212,12 @@
       return;
     }
     let total = 0;
+    let itemCount = 0;
     const rows = cart.map(item => {
       const p = getProduct(item.id);
       if (!p) return '';
       total += p.price * item.qty;
+      itemCount += item.qty;
       return `<div class="cart-row">
         <img src="${BASE}${p.image}" alt="${p.name}">
         <div class="info">
@@ -225,7 +227,7 @@
         <button class="remove" data-remove-cart="${p.id}" aria-label="削除"><i class="ri-close-line"></i></button>
       </div>`;
     }).join('');
-    const shipping = 1500;
+    const shipping = itemCount > 0 ? 1500 + (itemCount - 1) * 300 : 0;
     root.innerHTML = `<div class="cart-list">${rows}</div>
       <div class="cart-summary">
         <div class="row"><span>商品小計</span><span>${formatPrice(total)}</span></div>
