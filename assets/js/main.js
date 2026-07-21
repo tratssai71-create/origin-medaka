@@ -331,9 +331,20 @@
   }
 
   /* ---------------- init ---------------- */
-  document.addEventListener('DOMContentLoaded', () => {
+  async function loadProducts() {
+    try {
+      const res = await fetch(`${BASE}api/products`);
+      const data = await res.json();
+      window.PRODUCTS = data.products || [];
+    } catch (e) {
+      window.PRODUCTS = window.PRODUCTS || [];
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
     initHeader();
     initFadeUp();
+    await loadProducts();
     updateBadges();
     initProductGrids();
     renderCartPage();

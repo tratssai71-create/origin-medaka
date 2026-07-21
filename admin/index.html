@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>商品管理｜Origin Medaka</title>
+<style>
+  :root {
+    --gold: #DDBB75;
+    --bg-0: #0D0D0D;
+    --bg-1: #161616;
+    --bg-2: #1A1A1A;
+    --text-0: #E6E6E6;
+    --text-1: #DCDCDC;
+    --text-3: #BFBFBF;
+    --text-4: #ADADAD;
+    --red: #f87171;
+    --green: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg-0); color: var(--text-1);
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    line-height: 1.7;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 1.4rem; font-weight: 600; color: #fff; margin: 0 0 8px; }
+  .sub { color: var(--text-4); font-size: 0.85rem; margin-bottom: 32px; }
+  .card { background: var(--bg-1); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 28px; }
+
+  /* login */
+  #login-view { max-width: 380px; margin: 80px auto 0; }
+  #login-view h1 { text-align: center; }
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 0.85rem; margin-bottom: 8px; color: var(--text-3); }
+  input[type="password"], input[type="text"], input[type="number"], input[type="url"], textarea {
+    width: 100%; background: var(--bg-2); border: 1px solid rgba(255,255,255,0.15);
+    color: var(--text-0); padding: 12px 14px; border-radius: 5px; font-size: 0.95rem;
+  }
+  textarea { resize: vertical; min-height: 70px; font-family: inherit; }
+  input:focus, textarea:focus { outline: none; border-color: var(--gold); }
+  button {
+    font-family: inherit; cursor: pointer; border: none; border-radius: 5px;
+    padding: 12px 20px; font-size: 0.9rem; font-weight: 600; transition: opacity .2s;
+  }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary { background: var(--gold); color: #111; width: 100%; }
+  .btn-secondary { background: var(--bg-2); color: var(--text-1); border: 1px solid rgba(255,255,255,0.15); }
+  .btn-danger { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+  .error-msg { color: var(--red); font-size: 0.85rem; margin-top: 12px; min-height: 20px; }
+
+  /* main app */
+  #app-view { display: none; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); vertical-align: middle; }
+  th { color: var(--text-4); font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; }
+  td { font-size: 0.9rem; }
+  td img { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; background: #000; }
+  td input[type="text"], td input[type="number"] { width: 100%; padding: 8px 10px; font-size: 0.88rem; }
+  .col-name { min-width: 160px; }
+  .col-price, .col-stock { width: 100px; }
+  .col-active { width: 90px; text-align: center; }
+  .col-actions { width: 140px; white-space: nowrap; }
+  .row-actions { display: flex; gap: 6px; }
+  .row-actions button { padding: 8px 12px; font-size: 0.8rem; }
+  .switch { position: relative; display: inline-block; width: 42px; height: 24px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider { position: absolute; inset: 0; background: #444; border-radius: 999px; transition: .2s; cursor: pointer; }
+  .switch .slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .switch input:checked + .slider { background: var(--gold); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+  .add-form { margin-top: 40px; }
+  .add-form h2 { font-size: 1.05rem; margin: 0 0 20px; color: #fff; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--bg-2); border: 1px solid var(--gold); color: var(--text-0);
+    padding: 12px 22px; border-radius: 6px; font-size: 0.85rem; opacity: 0; pointer-events: none;
+    transition: all .25s ease; z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.err { border-color: var(--red); }
+  .empty-note { color: var(--text-4); font-size: 0.85rem; padding: 20px 0; text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="login-view">
+  <h1>商品管理ログイン</h1>
+  <div class="card">
+    <form id="login-form">
+      <div class="field">
+        <label>パスワード</label>
+        <input type="password" id="login-password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-primary">ログイン</button>
+      <p class="error-msg" id="login-error"></p>
+    </form>
+  </div>
+</div>
+
+<div id="app-view">
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>商品管理</h1>
+        <p class="sub">価格・在庫数・公開状態をその場で編集して保存できます。</p>
+      </div>
+      <button class="btn-secondary" id="logout-btn">ログアウト</button>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th class="col-name">商品名</th>
+            <th class="col-price">価格(円)</th>
+            <th class="col-stock">在庫数</th>
+            <th class="col-active">公開</th>
+            <th class="col-actions">操作</th>
+          </tr>
+        </thead>
+        <tbody id="product-rows"></tbody>
+      </table>
+      <p class="empty-note" id="empty-note" style="display:none;">商品がまだありません。下のフォームから追加してください。</p>
+    </div>
+
+    <div class="card add-form">
+      <h2>新規商品を追加</h2>
+      <form id="add-form">
+        <div class="grid-2">
+          <div class="field">
+            <label>商品名 <span style="color:var(--red);">必須</span></label>
+            <input type="text" id="add-name" required>
+          </div>
+          <div class="field">
+            <label>画像URL</label>
+            <input type="url" id="add-image" placeholder="https://... または assets/img/products/xxx.jpg">
+          </div>
+        </div>
+        <div class="field">
+          <label>説明</label>
+          <textarea id="add-description"></textarea>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>価格(円) <span style="color:var(--red);">必須</span></label>
+            <input type="number" id="add-price" min="0" required>
+          </div>
+          <div class="field">
+            <label>在庫数 <span style="color:var(--red);">必須</span></label>
+            <input type="number" id="add-stock" min="0" required>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">商品を追加</button>
+        <p class="error-msg" id="add-error"></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  let toastTimer;
+  function toast(msg, isErr) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.toggle('err', !!isErr);
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  function showApp() {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('app-view').style.display = 'block';
+    loadProducts();
+  }
+  function showLogin() {
+    document.getElementById('login-view').style.display = 'block';
+    document.getElementById('app-view').style.display = 'none';
+  }
+
+  async function api(path, options) {
+    const res = await fetch(path, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      ...options
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) { showLogin(); throw new Error('セッションが切れました。再度ログインしてください。'); }
+    if (!res.ok) throw new Error(data.error || 'エラーが発生しました');
+    return data;
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = '';
+    const password = document.getElementById('login-password').value;
+    try {
+      await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password }) });
+      document.getElementById('login-password').value = '';
+      showApp();
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    try { await api('/api/admin/logout', { method: 'POST' }); } catch (e) {}
+    showLogin();
+  });
+
+  function rowHTML(p) {
+    const img = p.image ? `<img src="${p.image}" alt="">` : '<div style="width:48px;height:48px;background:#222;border-radius:4px;"></div>';
+    return `<tr data-id="${p.id}">
+      <td>${img}</td>
+      <td class="col-name"><input type="text" value="${(p.name || '').replace(/"/g, '&quot;')}" data-field="name"></td>
+      <td class="col-price"><input type="number" min="0" value="${p.price}" data-field="price"></td>
+      <td class="col-stock"><input type="number" min="0" value="${p.stock}" data-field="stock"></td>
+      <td class="col-active" style="text-align:center;">
+        <label class="switch"><input type="checkbox" data-field="active" ${p.active !== false ? 'checked' : ''}><span class="slider"></span></label>
+      </td>
+      <td class="col-actions">
+        <div class="row-actions">
+          <button class="btn-secondary save-btn">保存</button>
+          <button class="btn-danger delete-btn">削除</button>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  async function loadProducts() {
+    try {
+      const { products } = await api('/api/admin/products');
+      const tbody = document.getElementById('product-rows');
+      const emptyNote = document.getElementById('empty-note');
+      if (!products.length) {
+        tbody.innerHTML = '';
+        emptyNote.style.display = 'block';
+        return;
+      }
+      emptyNote.style.display = 'none';
+      tbody.innerHTML = products.map(rowHTML).join('');
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+
+  document.getElementById('product-rows').addEventListener('click', async (e) => {
+    const tr = e.target.closest('tr');
+    if (!tr) return;
+    const id = tr.dataset.id;
+
+    if (e.target.classList.contains('save-btn')) {
+      const body = { id };
+      tr.querySelectorAll('[data-field]').forEach(input => {
+        const field = input.dataset.field;
+        body[field] = field === 'active' ? input.checked : input.value;
+      });
+      try {
+        await api('/api/admin/products', { method: 'PUT', body: JSON.stringify(body) });
+        toast('保存しました');
+      } catch (err) {
+        toast(err.message, true);
+      }
+    }
+
+    if (e.target.classList.contains('delete-btn')) {
+      if (!confirm('この商品を非公開にしますか？(サイトに表示されなくなります)')) return;
+      try {
+        await api('/api/admin/products', { method: 'DELETE', body: JSON.stringify({ id }) });
+        toast('非公開にしました');
+        loadProducts();
+      } catch (err) {
+        toast(err.message, true);
+      }
+    }
+  });
+
+  document.getElementById('add-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('add-error');
+    errEl.textContent = '';
+    const body = {
+      name: document.getElementById('add-name').value.trim(),
+      description: document.getElementById('add-description').value.trim(),
+      price: document.getElementById('add-price').value,
+      stock: document.getElementById('add-stock').value,
+      image: document.getElementById('add-image').value.trim()
+    };
+    try {
+      await api('/api/admin/products', { method: 'POST', body: JSON.stringify(body) });
+      toast('商品を追加しました');
+      e.target.reset();
+      loadProducts();
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
+  // Try to detect existing session by pinging the products endpoint.
+  (async () => {
+    try {
+      await api('/api/admin/products');
+      showApp();
+    } catch (e) {
+      showLogin();
+    }
+  })();
+})();
+</script>
+</body>
+</html>

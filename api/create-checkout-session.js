@@ -1,5 +1,17 @@
 const Stripe = require('stripe');
-const products = require('./_data/products.json');
+const kv = require('./_lib/kv');
+const seed = require('./_data/products-full.json');
+
+const KEY = 'om_products';
+
+async function loadProducts() {
+  let products = await kv.get(KEY);
+  if (!products) {
+    products = seed;
+    await kv.set(KEY, products);
+  }
+  return products;
+}
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -16,6 +28,7 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'カートが空です' });
   }
 
+  const products = await loadProducts();
   const productMap = new Map(products.map(p => [p.id, p]));
   const baseUrl = `https://${req.headers.host}`;
 
@@ -25,7 +38,7 @@ module.exports = async (req, res) => {
     line_items = items.map(({ id, qty }) => {
       const p = productMap.get(id);
       const quantity = Math.max(1, Math.min(99, parseInt(qty, 10) || 1));
-      if (!p || !p.active) {
+      if (!p || p.active === false || p.isSoldOut || p.stock === 0) {
         throw new Error(`商品が見つからないか販売終了です: ${id}`);
       }
       totalQty += quantity;
