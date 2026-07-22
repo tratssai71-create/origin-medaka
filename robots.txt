@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /cart/
+Disallow: /favorites/
+Disallow: /success/
+Disallow: /cancel/
+
+Sitemap: https://www.originmedaka.com/sitemap.xml

@@ -313,6 +313,54 @@
     renderProductGrid(root.querySelector('.product-grid'), favs);
   }
 
+  function setMetaTag(selector, attr, value) {
+    let el = document.querySelector(selector);
+    if (!el) return;
+    el.setAttribute(attr, value);
+  }
+
+  function updateProductMeta(p) {
+    const siteUrl = 'https://www.originmedaka.com';
+    const desc = (p.description || `${p.name}｜Origin Medakaが厳選した改良メダカ。`).slice(0, 120);
+    const url = `${siteUrl}/product/?id=${encodeURIComponent(p.id)}`;
+    const image = `${siteUrl}/${p.image}`;
+    const title = `${p.name}｜Origin Medaka`;
+    setMetaTag('meta[name="description"]', 'content', desc);
+    setMetaTag('link[rel="canonical"]', 'href', url);
+    setMetaTag('meta[property="og:title"]', 'content', title);
+    setMetaTag('meta[property="og:description"]', 'content', desc);
+    setMetaTag('meta[property="og:url"]', 'content', url);
+    setMetaTag('meta[property="og:image"]', 'content', image);
+    setMetaTag('meta[name="twitter:title"]', 'content', title);
+    setMetaTag('meta[name="twitter:description"]', 'content', desc);
+    setMetaTag('meta[name="twitter:image"]', 'content', image);
+
+    let ld = document.getElementById('product-jsonld');
+    if (!ld) {
+      ld = document.createElement('script');
+      ld.type = 'application/ld+json';
+      ld.id = 'product-jsonld';
+      document.head.appendChild(ld);
+    }
+    ld.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: p.name,
+      description: desc,
+      image: [image],
+      sku: p.id,
+      offers: {
+        '@type': 'Offer',
+        url,
+        priceCurrency: 'JPY',
+        price: p.price,
+        availability: (p.isSoldOut || p.stock === 0)
+          ? 'https://schema.org/OutOfStock'
+          : 'https://schema.org/InStock'
+      }
+    });
+  }
+
   /* ---------------- product detail page ---------------- */
   function renderProductDetail() {
     const root = document.getElementById('product-detail');
@@ -324,6 +372,7 @@
       return;
     }
     document.title = `${p.name}｜Origin Medaka`;
+    updateProductMeta(p);
     const soldOut = !!p.isSoldOut || p.stock === 0;
     const fav = isFavorite(p.id);
     root.innerHTML = `
