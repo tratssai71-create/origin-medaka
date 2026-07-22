@@ -162,6 +162,11 @@ header.site-header.scrolled {
 .nav-links a.line-link { color: rgba(221,187,117,0.9); }
 .site-header.scrolled .nav-links a.line-link { color: var(--gold); }
 .nav-links a.line-link:hover { color: var(--gold-dark); }
+.nav-links a.nav-active { position: relative; color: #fff; }
+.site-header.scrolled .nav-links a.nav-active { color: var(--gold); }
+.nav-links a.nav-active::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -8px; height: 1px; background: var(--gold);
+}
 
 .nav-actions { display: flex; align-items: center; gap: 0; }
 .icon-btn {
@@ -222,6 +227,7 @@ header.site-header.scrolled {
   border-bottom: 1px solid rgba(255,255,255,0.09);
 }
 .mobile-menu nav a.line-link { color: var(--gold); }
+.mobile-menu nav a.nav-active { color: var(--gold); font-weight: 500; }
 .mobile-menu nav a i { color: var(--text-4); font-size: 1.05rem; }
 .mobile-menu .bottom-links {
   margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.09);

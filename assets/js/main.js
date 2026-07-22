@@ -70,6 +70,20 @@
   function isFavorite(id) { return store.get(FAV_KEY).includes(id); }
   function isInCart(id) { return store.get(CART_KEY).some(i => i.id === id); }
 
+  function normalizePath(path) {
+    path = path.replace(/\/index\.html$/, '/');
+    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+    return path || '/';
+  }
+  function highlightActiveNav() {
+    const current = normalizePath(location.pathname);
+    document.querySelectorAll('.nav-links a, .mobile-menu nav a').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      if (href.includes('#')) return;
+      if (normalizePath(a.pathname) === current) a.classList.add('nav-active');
+    });
+  }
+
   function updateBadges() {
     document.querySelectorAll('[data-cart-badge]').forEach(b => {
       const n = cartCount();
@@ -364,6 +378,7 @@
   document.addEventListener('DOMContentLoaded', async () => {
     initHeader();
     initFadeUp();
+    highlightActiveNav();
     await loadProducts();
     updateBadges();
     initProductGrids();
