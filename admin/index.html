@@ -139,8 +139,10 @@
             <input type="text" id="add-name" required>
           </div>
           <div class="field">
-            <label>画像URL</label>
-            <input type="url" id="add-image" placeholder="https://... または assets/img/products/xxx.jpg">
+            <label>画像</label>
+            <input type="file" id="add-image-file" accept="image/*">
+            <input type="hidden" id="add-image">
+            <img id="add-image-preview" alt="" style="display:none; width:64px; height:64px; object-fit:cover; border-radius:4px; margin-top:8px;">
           </div>
         </div>
         <div class="field">
@@ -226,11 +228,34 @@
     return '/' + src;
   }
 
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadImage(file) {
+    const dataBase64 = await fileToBase64(file);
+    const { url } = await api('/api/admin/upload', {
+      method: 'POST',
+      body: JSON.stringify({ filename: file.name, contentType: file.type, dataBase64 })
+    });
+    return url;
+  }
+
   function rowHTML(p) {
     const imgSrc = resolveImage(p.image);
     const img = imgSrc ? `<img src="${imgSrc}" alt="">` : '<div style="width:48px;height:48px;background:#222;border-radius:4px;"></div>';
     return `<tr data-id="${p.id}">
-      <td>${img}</td>
+      <td>
+        <label class="img-upload" title="クリックして画像を変更" style="cursor:pointer; display:inline-block;">
+          ${img}
+          <input type="file" accept="image/*" class="row-image-file" style="display:none;">
+        </label>
+      </td>
       <td class="col-name"><input type="text" value="${(p.name || '').replace(/"/g, '&quot;')}" data-field="name"></td>
       <td class="col-price"><input type="number" min="0" value="${p.price}" data-field="price"></td>
       <td class="col-stock"><input type="number" min="0" value="${p.stock}" data-field="stock"></td>
@@ -294,6 +319,41 @@
     }
   });
 
+  document.getElementById('product-rows').addEventListener('change', async (e) => {
+    if (!e.target.classList.contains('row-image-file')) return;
+    const tr = e.target.closest('tr');
+    const id = tr.dataset.id;
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      toast('画像をアップロード中...');
+      const url = await uploadImage(file);
+      await api('/api/admin/products', { method: 'PUT', body: JSON.stringify({ id, image: url }) });
+      toast('画像を更新しました');
+      loadProducts();
+    } catch (err) {
+      toast(err.message, true);
+    }
+  });
+
+  document.getElementById('add-image-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const errEl = document.getElementById('add-error');
+    errEl.textContent = '';
+    try {
+      toast('画像をアップロード中...');
+      const url = await uploadImage(file);
+      document.getElementById('add-image').value = url;
+      const preview = document.getElementById('add-image-preview');
+      preview.src = url;
+      preview.style.display = 'block';
+      toast('画像をアップロードしました');
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
   document.getElementById('add-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errEl = document.getElementById('add-error');
@@ -309,6 +369,7 @@
       await api('/api/admin/products', { method: 'POST', body: JSON.stringify(body) });
       toast('商品を追加しました');
       e.target.reset();
+      document.getElementById('add-image-preview').style.display = 'none';
       loadProducts();
     } catch (err) {
       errEl.textContent = err.message;
