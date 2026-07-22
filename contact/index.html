@@ -90,15 +90,15 @@
       <form id="contact-form" class="fade-up">
         <div class="form-group">
           <label>お名前<span class="req">必須</span></label>
-          <input type="text" required>
+          <input type="text" id="contact-name" required>
         </div>
         <div class="form-group">
           <label>メールアドレス<span class="req">必須</span></label>
-          <input type="email" required>
+          <input type="email" id="contact-email" required>
         </div>
         <div class="form-group">
           <label>お問い合わせ種別<span class="req">必須</span></label>
-          <select required>
+          <select id="contact-category" required>
             <option value="">選択してください</option>
             <option>商品・在庫について</option>
             <option>注文・お支払いについて</option>
@@ -110,9 +110,9 @@
         </div>
         <div class="form-group">
           <label>お問い合わせ内容（500字以内）<span class="req">必須</span></label>
-          <textarea maxlength="500" required></textarea>
+          <textarea id="contact-message" maxlength="500" required></textarea>
         </div>
-        <button type="submit" class="btn btn-gold btn-block">送信する</button>
+        <button type="submit" class="btn btn-gold btn-block" id="contact-submit">送信する</button>
         <p class="form-hint" id="contact-result"></p>
       </form>
     </div>
@@ -139,9 +139,37 @@
 <script>window.OM_BASE = '../';</script>
 <script src="../assets/js/main.js"></script>
 <script>
-  document.getElementById('contact-form').addEventListener('submit', (e) => {
+  document.getElementById('contact-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    document.getElementById('contact-result').textContent = '※本フォームはデモ用のため送信されません。実際のお問い合わせはInstagramまたはメールをご利用ください。';
+    const resultEl = document.getElementById('contact-result');
+    const btn = document.getElementById('contact-submit');
+    const body = {
+      name: document.getElementById('contact-name').value.trim(),
+      email: document.getElementById('contact-email').value.trim(),
+      category: document.getElementById('contact-category').value,
+      message: document.getElementById('contact-message').value.trim()
+    };
+    resultEl.style.color = '';
+    resultEl.textContent = '';
+    btn.disabled = true;
+    btn.textContent = '送信中…';
+    try {
+      const res = await fetch('../api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || '送信に失敗しました');
+      resultEl.textContent = 'お問い合わせを送信しました。通常2営業日以内にご返信いたします。';
+      e.target.reset();
+    } catch (err) {
+      resultEl.style.color = 'var(--red)';
+      resultEl.textContent = '送信に失敗しました。お手数ですがInstagramまたはメールにてご連絡ください。';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '送信する';
+    }
   });
 </script>
 </body>
