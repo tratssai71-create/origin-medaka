@@ -220,8 +220,15 @@
     showLogin();
   });
 
+  function resolveImage(src) {
+    if (!src) return '';
+    if (/^https?:\/\//.test(src) || src.startsWith('/')) return src;
+    return '/' + src;
+  }
+
   function rowHTML(p) {
-    const img = p.image ? `<img src="${p.image}" alt="">` : '<div style="width:48px;height:48px;background:#222;border-radius:4px;"></div>';
+    const imgSrc = resolveImage(p.image);
+    const img = imgSrc ? `<img src="${imgSrc}" alt="">` : '<div style="width:48px;height:48px;background:#222;border-radius:4px;"></div>';
     return `<tr data-id="${p.id}">
       <td>${img}</td>
       <td class="col-name"><input type="text" value="${(p.name || '').replace(/"/g, '&quot;')}" data-field="name"></td>
