@@ -49,6 +49,15 @@
     store.set(CART_KEY, store.get(CART_KEY).filter(i => i.id !== id));
     updateBadges();
   }
+  function setCartQty(id, qty) {
+    const cart = store.get(CART_KEY);
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    if (qty <= 0) { removeFromCart(id); return; }
+    item.qty = Math.min(99, qty);
+    store.set(CART_KEY, cart);
+    updateBadges();
+  }
   function toggleFavorite(id) {
     const favs = store.get(FAV_KEY);
     const idx = favs.indexOf(id);
@@ -222,9 +231,14 @@
         <img src="${BASE}${p.image}" alt="${p.name}">
         <div class="info">
           <h4>${p.name}</h4>
-          <span class="price">${formatPrice(p.price)}</span><span class="qty">× ${item.qty}</span>
+          <span class="price">${formatPrice(p.price)}</span>
+          <div class="qty-stepper" data-qty-id="${p.id}">
+            <button type="button" class="qty-btn" data-qty-dec aria-label="数量を減らす">−</button>
+            <span class="qty-val">${item.qty}</span>
+            <button type="button" class="qty-btn" data-qty-inc aria-label="数量を増やす">+</button>
+          </div>
         </div>
-        <button class="remove" data-remove-cart="${p.id}" aria-label="削除"><i class="ri-close-line"></i></button>
+        <button class="remove" data-remove-cart="${p.id}" aria-label="削除"><i class="ri-delete-bin-line"></i></button>
       </div>`;
     }).join('');
     const shipping = itemCount > 0 ? 1500 + (itemCount - 1) * 300 : 0;
@@ -238,6 +252,12 @@
       </div>`;
     root.querySelectorAll('[data-remove-cart]').forEach(btn => {
       btn.addEventListener('click', () => { removeFromCart(btn.dataset.removeCart); renderCartPage(); });
+    });
+    root.querySelectorAll('.qty-stepper').forEach(stepper => {
+      const id = stepper.dataset.qtyId;
+      const current = store.get(CART_KEY).find(i => i.id === id)?.qty || 1;
+      stepper.querySelector('[data-qty-dec]').addEventListener('click', () => { setCartQty(id, current - 1); renderCartPage(); });
+      stepper.querySelector('[data-qty-inc]').addEventListener('click', () => { setCartQty(id, current + 1); renderCartPage(); });
     });
     document.getElementById('checkout-btn')?.addEventListener('click', startCheckout);
   }
@@ -352,5 +372,5 @@
     renderProductDetail();
   });
 
-  window.OM = { addToCart, removeFromCart, toggleFavorite, isFavorite, isInCart, renderProductGrid, productCardHTML, formatPrice, toast, store, CART_KEY, FAV_KEY, getProduct, updateBadges };
+  window.OM = { addToCart, removeFromCart, setCartQty, toggleFavorite, isFavorite, isInCart, renderProductGrid, productCardHTML, formatPrice, toast, store, CART_KEY, FAV_KEY, getProduct, updateBadges };
 })();
