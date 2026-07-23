@@ -686,10 +686,19 @@ table.spec-table td { color: var(--text-3); line-height: 1.9; }
 .form-hint { font-size: 0.7rem; color: var(--text-5); margin-top: 8px; }
 .contact-methods { display: grid; grid-template-columns: 1fr; gap: 16px; margin: 40px 0; }
 @media (min-width: 700px) { .contact-methods { grid-template-columns: repeat(3, 1fr); } }
-.contact-method { border: 1px solid rgba(255,255,255,0.14); border-radius: 4px; padding: 22px; text-align: center; }
-.contact-method i { font-size: 1.3rem; color: var(--gold); margin-bottom: 12px; display: block; }
-.contact-method .label { font-size: 0.75rem; color: var(--text-1); margin-bottom: 6px; }
+.contact-method {
+  border: 1px solid rgba(255,255,255,0.14); border-radius: 6px; padding: 26px 22px; text-align: center;
+  transition: border-color .2s ease, transform .2s ease, background .2s ease;
+}
+.contact-method i { font-size: 1.6rem; color: var(--gold); margin-bottom: 14px; display: block; }
+.contact-method .label { font-size: 0.8rem; color: var(--text-1); margin-bottom: 6px; font-weight: 500; }
 .contact-method .value { font-size: 0.78rem; color: var(--text-3); word-break: break-all; }
+a.contact-method { display: block; text-decoration: none; }
+a.contact-method:hover { border-color: var(--gold); transform: translateY(-3px); background: rgba(221,187,117,0.05); }
+a.contact-method.method-line i { color: var(--line-green); }
+a.contact-method.method-line:hover { border-color: var(--line-green); background: rgba(6,199,85,0.06); }
+a.contact-method .cta { display: inline-block; margin-top: 12px; font-size: 0.7rem; color: var(--gold); letter-spacing: 0.05em; }
+a.contact-method.method-line .cta { color: var(--line-green); }
 
 /* blog */
 .blog-grid { display: grid; grid-template-columns: 1fr; gap: 28px; margin-top: 48px; }
