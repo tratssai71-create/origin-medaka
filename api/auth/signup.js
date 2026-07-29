@@ -1,6 +1,8 @@
 const kv = require('../_lib/kv');
 const { createSessionCookie, hashPassword } = require('../_lib/customerAuth');
 
+const USER_INDEX_KEY = 'om_user_index';
+
 function userKey(email) {
   return `om_user:${email.trim().toLowerCase()}`;
 }
@@ -34,6 +36,12 @@ module.exports = async (req, res) => {
     createdAt: Date.now()
   };
   await kv.set(key, user);
+
+  const index = (await kv.get(USER_INDEX_KEY)) || [];
+  if (!index.includes(user.email)) {
+    index.push(user.email);
+    await kv.set(USER_INDEX_KEY, index);
+  }
 
   res.setHeader('Set-Cookie', createSessionCookie(user.email));
   return res.status(200).json({ name: user.name, email: user.email });

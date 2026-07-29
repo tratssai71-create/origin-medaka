@@ -163,6 +163,21 @@
         <p class="error-msg" id="add-error"></p>
       </form>
     </div>
+
+    <div class="card add-form">
+      <h2>会員一覧</h2>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-name">お名前</th>
+            <th>メールアドレス</th>
+            <th>登録日</th>
+          </tr>
+        </thead>
+        <tbody id="user-rows"></tbody>
+      </table>
+      <p class="empty-note" id="user-empty-note" style="display:none;">登録済みの会員がまだいません。</p>
+    </div>
   </div>
 </div>
 
@@ -184,6 +199,7 @@
     document.getElementById('login-view').style.display = 'none';
     document.getElementById('app-view').style.display = 'block';
     loadProducts();
+    loadUsers();
   }
   function showLogin() {
     document.getElementById('login-view').style.display = 'block';
@@ -283,6 +299,32 @@
       }
       emptyNote.style.display = 'none';
       tbody.innerHTML = products.map(rowHTML).join('');
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+
+  function userRowHTML(u) {
+    const date = new Date(u.createdAt).toLocaleString('ja-JP');
+    return `<tr>
+      <td class="col-name">${(u.name || '').replace(/</g, '&lt;')}</td>
+      <td>${(u.email || '').replace(/</g, '&lt;')}</td>
+      <td>${date}</td>
+    </tr>`;
+  }
+
+  async function loadUsers() {
+    try {
+      const { users } = await api('/api/admin/users');
+      const tbody = document.getElementById('user-rows');
+      const emptyNote = document.getElementById('user-empty-note');
+      if (!users.length) {
+        tbody.innerHTML = '';
+        emptyNote.style.display = 'block';
+        return;
+      }
+      emptyNote.style.display = 'none';
+      tbody.innerHTML = users.map(userRowHTML).join('');
     } catch (err) {
       toast(err.message, true);
     }
