@@ -17,6 +17,10 @@
   }
 
   function formatPrice(n) { return '¥' + n.toLocaleString(); }
+  function resolveImage(src) {
+    if (!src) return '';
+    return /^https?:\/\//.test(src) ? src : `${BASE}${src}`;
+  }
 
   /* ---------------- toast ---------------- */
   let toastTimer;
@@ -112,7 +116,7 @@
       <div class="thumb">
         <span class="type-tag">${p.type === 'actual' ? '現物' : 'イメージ'}</span>
         ${p.isNew && !soldOut ? '<span class="new-tag">NEW</span>' : ''}
-        <img src="${BASE}${p.image}" alt="${p.name}" loading="lazy">
+        <img src="${resolveImage(p.image)}" alt="${p.name}" loading="lazy">
         ${soldOut ? '<div class="soldout-overlay"><span><span class="line"></span>SOLD OUT<span class="line"></span></span></div>' : ''}
         <button class="card-fav-btn ${fav ? 'active' : ''}" data-fav-btn="${p.id}" aria-label="お気に入り">
           <i class="${fav ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
@@ -242,7 +246,7 @@
       total += p.price * item.qty;
       itemCount += item.qty;
       return `<div class="cart-row">
-        <img src="${BASE}${p.image}" alt="${p.name}">
+        <img src="${resolveImage(p.image)}" alt="${p.name}">
         <div class="info">
           <h4>${p.name}</h4>
           <span class="price">${formatPrice(p.price)}</span>
@@ -333,7 +337,7 @@
     const siteUrl = 'https://www.originmedaka.com';
     const desc = (p.description || `${p.name}｜Origin Medakaが厳選した改良メダカ。`).slice(0, 120);
     const url = `${siteUrl}/product/?id=${encodeURIComponent(p.id)}`;
-    const image = `${siteUrl}/${p.image}`;
+    const image = /^https?:\/\//.test(p.image) ? p.image : `${siteUrl}/${p.image}`;
     const title = `${p.name}｜Origin Medaka`;
     setMetaTag('meta[name="description"]', 'content', desc);
     setMetaTag('link[rel="canonical"]', 'href', url);
@@ -387,7 +391,7 @@
     const fav = isFavorite(p.id);
     root.innerHTML = `
       <div class="pd-grid">
-        <div class="pd-image"><img src="${BASE}${p.image}" alt="${p.name}"></div>
+        <div class="pd-image"><img src="${resolveImage(p.image)}" alt="${p.name}"></div>
         <div>
           <p class="pd-eyebrow">${p.type === 'actual' ? '現物個体' : 'イメージ個体'} ／ ${p.grade || p.rarity}</p>
           <h1 class="pd-title">${p.name}</h1>

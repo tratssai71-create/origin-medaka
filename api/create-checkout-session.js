@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
           unit_amount: p.price,
           product_data: {
             name: p.name,
-            images: [`${baseUrl}/${p.image}`]
+            images: p.image ? [/^https?:\/\//.test(p.image) ? p.image : `${baseUrl}/${p.image}`] : []
           }
         }
       };
