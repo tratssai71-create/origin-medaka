@@ -40,23 +40,104 @@ function formatAddress(details) {
   return [a.postal_code, a.state, a.city, a.line1, a.line2].filter(Boolean).join(' ');
 }
 
+function formatDateJP(unixSeconds) {
+  return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(unixSeconds * 1000));
+}
+
+function paymentMethodLabel(types) {
+  const map = { card: 'クレジットカード', konbini: 'コンビニ払い', customer_balance: '銀行振込', paypay: 'PayPay' };
+  if (!types || !types.length) return 'クレジットカード';
+  return types.map((t) => map[t] || t).join('・');
+}
+
 async function notifyOrder(stripe, session) {
   const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 100 });
   const itemsText = lineItems.data
     .map((li) => `・${li.description} × ${li.quantity} — ${formatYen(li.amount_total)}`)
     .join('\n');
+  const itemsBlock = lineItems.data
+    .map((li) => `商品名：${li.description}\n数量：${li.quantity}\n商品金額：${formatYen(li.amount_total)}`)
+    .join('\n\n');
 
   const customerEmail = session.customer_details?.email;
   const customerName = session.customer_details?.name || 'お客様';
   const address = formatAddress(session.customer_details);
+  const addressObj = session.customer_details?.address || {};
   const phone = session.customer_details?.phone || '(未登録)';
   const total = formatYen(session.amount_total);
+  const shipping = formatYen(session.total_details?.amount_shipping || 0);
+  const orderNumber = session.id;
+  const orderDate = formatDateJP(session.created);
+  const paymentMethod = paymentMethodLabel(session.payment_method_types);
 
   if (customerEmail) {
+    const addressLine = [addressObj.state, addressObj.city, addressObj.line1, addressObj.line2].filter(Boolean).join('');
+    const text = `${customerName}様
+
+この度は、Origin Medakaをご利用いただき、誠にありがとうございます。
+
+下記の内容でご注文を承りました。
+
+━━━━━━━━━━━━━━━━━━
+ご注文内容
+━━━━━━━━━━━━━━━━━━
+
+ご注文番号：${orderNumber}
+ご注文日時：${orderDate}
+
+${itemsBlock}
+
+送料：${shipping}
+お支払い合計：${total}
+
+お支払い方法：${paymentMethod}
+
+━━━━━━━━━━━━━━━━━━
+お届け先
+━━━━━━━━━━━━━━━━━━
+
+〒${addressObj.postal_code || ''}
+${addressLine}
+${customerName} 様
+電話番号：${phone}
+
+━━━━━━━━━━━━━━━━━━
+
+ご注文いただいた個体は、状態を丁寧に確認したうえで、発送準備を進めてまいります。
+
+お届けに関するご希望の日時がございましたら、お気軽にご連絡ください。
+
+可能な限りお客様のご都合に合わせて発送いたしますが、個体の状態や配送上の都合により、すべてのご希望に沿えない場合がございます。あらかじめご了承ください。
+
+また、生体という商品の特性上、個体の状態や天候、配送環境などを考慮し、発送日についてご相談させていただく場合がございます。
+
+発送が完了しましたら、追跡番号とあわせて改めてご連絡いたします。
+
+ご不明な点やご希望がございましたら、お気軽にお問い合わせください。
+
+この度は、数ある販売店の中からOrigin Medakaをお選びいただき、誠にありがとうございました。
+
+━━━━━━━━━━━━━━━━━━
+Origin Medaka
+
+Web：https://www.originmedaka.com
+Instagram：@origin_medaka
+━━━━━━━━━━━━━━━━━━
+
+※本メールは、ご注文完了後に自動送信されています。
+※お心当たりのない場合は、お手数ですがお問い合わせください。`;
+
     await sendEmail({
       to: customerEmail,
       subject: 'ご注文ありがとうございます｜Origin Medaka',
-      text: `${customerName}様\n\nこの度はOrigin Medakaにてご注文いただき、誠にありがとうございます。\n以下の内容でご注文を承りました。\n\n${itemsText}\n\n合計金額（送料込）: ${total}\n\nお届け先: ${address}\n\n発送準備が整い次第、あらためてご連絡いたします。\nご不明な点がございましたら、当メール、公式LINE、Instagramよりお気軽にお問い合わせください。\n\nOrigin Medaka\nhttps://www.originmedaka.com/`
+      text
     });
   }
 
