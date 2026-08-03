@@ -124,7 +124,7 @@
       </div>
       <div class="body">
         <h3>${p.name}</h3>
-        <span class="grade-pill">${p.grade || p.rarity}</span>
+        ${(p.grade || p.rarity) ? `<span class="grade-pill">${p.grade || p.rarity}</span>` : ''}
         <div class="bloodline">${p.bloodline || ''}</div>
         <div class="price-row">
           <span class="price">${formatPrice(p.price)}</span>
@@ -393,7 +393,7 @@
       <div class="pd-grid">
         <div class="pd-image"><img src="${resolveImage(p.image)}" alt="${p.name}"></div>
         <div>
-          <p class="pd-eyebrow">${p.type === 'actual' ? '現物個体' : 'イメージ個体'} ／ ${p.grade || p.rarity}</p>
+          <p class="pd-eyebrow">${p.type === 'actual' ? '現物個体' : 'イメージ個体'}${(p.grade || p.rarity) ? ` ／ ${p.grade || p.rarity}` : ''}</p>
           <h1 class="pd-title">${p.name}</h1>
           <p class="pd-en">${p.nameEn || ''}</p>
           <p class="pd-price">${soldOut ? `<s>${formatPrice(p.price)}</s>` : formatPrice(p.price)} <span style="font-size:0.9rem;color:var(--text-3);">税込</span></p>

@@ -395,11 +395,14 @@
     }
   });
 
+  let addImageUploading = false;
+
   document.getElementById('add-image-file').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const errEl = document.getElementById('add-error');
     errEl.textContent = '';
+    addImageUploading = true;
     try {
       toast('画像をアップロード中...');
       const url = await uploadImage(file);
@@ -410,6 +413,8 @@
       toast('画像をアップロードしました');
     } catch (err) {
       errEl.textContent = err.message;
+    } finally {
+      addImageUploading = false;
     }
   });
 
@@ -417,6 +422,10 @@
     e.preventDefault();
     const errEl = document.getElementById('add-error');
     errEl.textContent = '';
+    if (addImageUploading) {
+      errEl.textContent = '画像のアップロードが完了するまでお待ちください。';
+      return;
+    }
     const body = {
       name: document.getElementById('add-name').value.trim(),
       description: document.getElementById('add-description').value.trim(),
