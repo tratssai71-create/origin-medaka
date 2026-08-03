@@ -274,6 +274,11 @@
       stepper.querySelector('[data-qty-inc]').addEventListener('click', () => { setCartQty(id, current + 1); renderCartPage(); });
     });
     document.getElementById('checkout-btn')?.addEventListener('click', startCheckout);
+
+    if (new URLSearchParams(location.search).get('autocheckout') === '1') {
+      history.replaceState(null, '', location.pathname);
+      startCheckout();
+    }
   }
 
   async function startCheckout() {
@@ -287,9 +292,14 @@
     try {
       const res = await fetch(`${BASE}api/create-checkout-session`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: cart })
       });
+      if (res.status === 401) {
+        location.href = `${BASE}account/index.html?next=checkout`;
+        return;
+      }
       const data = await res.json();
       if (!res.ok || !data.url) throw new Error(data.error || '決済ページの作成に失敗しました');
       location.href = data.url;

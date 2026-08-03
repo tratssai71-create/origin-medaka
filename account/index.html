@@ -185,6 +185,14 @@
     return data;
   }
 
+  function afterAuthRedirect() {
+    if (new URLSearchParams(location.search).get('next') === 'checkout') {
+      location.href = '../cart/index.html?autocheckout=1';
+      return true;
+    }
+    return false;
+  }
+
   function showMypage(user) {
     document.getElementById('guest-view').style.display = 'none';
     document.getElementById('mypage-view').style.display = 'block';
@@ -197,7 +205,9 @@
     document.getElementById('guest-view').style.display = 'block';
     document.getElementById('mypage-view').style.display = 'none';
     document.getElementById('page-title').textContent = 'アカウント';
-    document.getElementById('page-lead').textContent = 'ログインすると、次回以降のご注文がよりスムーズになります。';
+    document.getElementById('page-lead').textContent = new URLSearchParams(location.search).get('next') === 'checkout'
+      ? 'ご購入にはログインまたは新規登録が必要です。'
+      : 'ログインすると、次回以降のご注文がよりスムーズになります。';
   }
 
   document.querySelectorAll('.auth-tab').forEach(tab => {
@@ -221,7 +231,7 @@
           password: document.getElementById('login-password').value
         })
       });
-      showMypage(user);
+      if (!afterAuthRedirect()) showMypage(user);
     } catch (err) {
       errEl.textContent = err.message;
     }
@@ -240,7 +250,7 @@
           password: document.getElementById('signup-password').value
         })
       });
-      showMypage(user);
+      if (!afterAuthRedirect()) showMypage(user);
     } catch (err) {
       errEl.textContent = err.message;
     }
@@ -254,7 +264,7 @@
   (async () => {
     try {
       const user = await api('../api/auth/me');
-      showMypage(user);
+      if (!afterAuthRedirect()) showMypage(user);
     } catch (e) {
       showGuest();
     }

@@ -1,6 +1,7 @@
 const Stripe = require('stripe');
 const kv = require('./_lib/kv');
 const seed = require('./_data/products-full.json');
+const { getSessionEmail } = require('./_lib/customerAuth');
 
 const KEY = 'om_products';
 
@@ -21,6 +22,11 @@ module.exports = async (req, res) => {
 
   if (!process.env.STRIPE_SECRET_KEY) {
     return res.status(500).json({ error: 'STRIPE_SECRET_KEY is not configured' });
+  }
+
+  const customerEmail = getSessionEmail(req);
+  if (!customerEmail) {
+    return res.status(401).json({ error: 'ご購入にはログインが必要です' });
   }
 
   const items = Array.isArray(req.body?.items) ? req.body.items : [];
@@ -65,6 +71,7 @@ module.exports = async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items,
+      customer_email: customerEmail,
       shipping_address_collection: { allowed_countries: ['JP'] },
       phone_number_collection: { enabled: true },
       shipping_options: [
