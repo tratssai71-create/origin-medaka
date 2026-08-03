@@ -424,9 +424,16 @@
     }
   }
 
+  function initHeroMotion() {
+    const hero = document.querySelector('.hero');
+    if (!hero) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => hero.classList.add('loaded')));
+  }
+
   document.addEventListener('DOMContentLoaded', async () => {
     initHeader();
     initFadeUp();
+    initHeroMotion();
     highlightActiveNav();
     await loadProducts();
     updateBadges();
