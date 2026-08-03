@@ -41,7 +41,13 @@ async function handleUsers(req, res) {
   for (const email of index) {
     const user = await kv.get(`om_user:${email}`);
     if (user) {
-      users.push({ name: user.name, email: user.email, createdAt: user.createdAt });
+      users.push({
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+        totalSpent: user.totalSpent || 0,
+        orderCount: user.orderCount || 0
+      });
     }
   }
   users.sort((a, b) => b.createdAt - a.createdAt);

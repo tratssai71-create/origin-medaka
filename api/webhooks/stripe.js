@@ -1,4 +1,5 @@
 const Stripe = require('stripe');
+const kv = require('../_lib/kv');
 
 module.exports.config = {
   api: {
@@ -76,6 +77,16 @@ async function notifyOrder(stripe, session) {
   const orderNumber = session.id;
   const orderDate = formatDateJP(session.created);
   const paymentMethod = paymentMethodLabel(session.payment_method_types);
+
+  if (customerEmail) {
+    const userKey = `om_user:${customerEmail.trim().toLowerCase()}`;
+    const user = await kv.get(userKey);
+    if (user) {
+      user.totalSpent = (user.totalSpent || 0) + (session.amount_total || 0);
+      user.orderCount = (user.orderCount || 0) + 1;
+      await kv.set(userKey, user);
+    }
+  }
 
   if (customerEmail) {
     const addressLine = [addressObj.state, addressObj.city, addressObj.line1, addressObj.line2].filter(Boolean).join('');

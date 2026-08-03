@@ -176,13 +176,15 @@
     </div>
 
     <div class="card add-form">
-      <h2>会員一覧</h2>
+      <h2>会員一覧 <span id="user-count" style="font-size:0.6em; font-weight:normal; color:#999;"></span></h2>
       <table>
         <thead>
           <tr>
             <th class="col-name">お名前</th>
             <th>メールアドレス</th>
             <th>登録日</th>
+            <th>累計購入金額</th>
+            <th>購入回数</th>
           </tr>
         </thead>
         <tbody id="user-rows"></tbody>
@@ -317,10 +319,13 @@
 
   function userRowHTML(u) {
     const date = new Date(u.createdAt).toLocaleString('ja-JP');
+    const spent = `¥${(u.totalSpent || 0).toLocaleString('ja-JP')}`;
     return `<tr>
       <td class="col-name">${(u.name || '').replace(/</g, '&lt;')}</td>
       <td>${(u.email || '').replace(/</g, '&lt;')}</td>
       <td>${date}</td>
+      <td>${spent}</td>
+      <td>${u.orderCount || 0}</td>
     </tr>`;
   }
 
@@ -329,6 +334,7 @@
       const { users } = await api('/api/admin/users');
       const tbody = document.getElementById('user-rows');
       const emptyNote = document.getElementById('user-empty-note');
+      document.getElementById('user-count').textContent = `（会員数: ${users.length}人）`;
       if (!users.length) {
         tbody.innerHTML = '';
         emptyNote.style.display = 'block';
