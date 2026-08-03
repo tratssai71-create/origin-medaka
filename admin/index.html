@@ -367,10 +367,10 @@
     }
 
     if (e.target.classList.contains('delete-btn')) {
-      if (!confirm('この商品を非公開にしますか？(サイトに表示されなくなります)')) return;
+      if (!confirm('この商品を完全に削除しますか？(元に戻せません)')) return;
       try {
         await api('/api/admin/products', { method: 'DELETE', body: JSON.stringify({ id }) });
-        toast('非公開にしました');
+        toast('削除しました');
         loadProducts();
       } catch (err) {
         toast(err.message, true);

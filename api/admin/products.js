@@ -67,9 +67,9 @@ module.exports = async (req, res) => {
     const { id } = req.body || {};
     if (!id) return res.status(400).json({ error: 'idが必要です' });
     const products = await loadProducts();
-    const p = products.find(p => p.id === id);
-    if (!p) return res.status(404).json({ error: '商品が見つかりません' });
-    p.active = false;
+    const index = products.findIndex(p => p.id === id);
+    if (index === -1) return res.status(404).json({ error: '商品が見つかりません' });
+    products.splice(index, 1);
     await kv.set(KEY, products);
     return res.status(200).json({ ok: true });
   }
