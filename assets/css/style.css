@@ -180,6 +180,12 @@ header.site-header.scrolled {
 .site-header.scrolled .icon-btn { color: var(--text-4); }
 .icon-btn:hover { color: #fff; }
 .site-header.scrolled .icon-btn:hover { color: var(--text-1); }
+.icon-btn.nav-active { color: var(--gold); }
+.icon-btn.nav-active::after {
+  content: ''; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  width: 4px; height: 4px; border-radius: 999px; background: var(--gold);
+}
+.site-header.scrolled .icon-btn.nav-active { color: var(--gold); }
 .icon-badge {
   position: absolute; top: 4px; right: 4px;
   width: 20px; height: 20px;
@@ -239,6 +245,8 @@ header.site-header.scrolled {
   padding: 14px 0;
   font-size: 0.82rem; letter-spacing: 0.2em; color: var(--text-4);
 }
+.mobile-menu .bottom-links a.nav-active { color: var(--gold); font-weight: 500; }
+.mobile-menu .bottom-links a.nav-active i { color: var(--gold); }
 .mobile-menu .bottom-links a i { font-size: 1rem; width: 20px; text-align: center; }
 .mobile-menu .bottom-links a .mini-badge {
   margin-left: auto; width: 20px; height: 20px; border-radius: 999px;

@@ -77,7 +77,7 @@
   }
   function highlightActiveNav() {
     const current = normalizePath(location.pathname);
-    document.querySelectorAll('.nav-links a, .mobile-menu nav a').forEach(a => {
+    document.querySelectorAll('.nav-links a, .mobile-menu nav a, .nav-actions a.icon-btn, .mobile-menu .bottom-links a').forEach(a => {
       const href = a.getAttribute('href') || '';
       if (href.includes('#')) return;
       if (normalizePath(a.pathname) === current) a.classList.add('nav-active');
