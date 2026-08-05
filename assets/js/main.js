@@ -21,6 +21,10 @@
     if (!src) return '';
     return /^https?:\/\//.test(src) ? src : `${BASE}${src}`;
   }
+  function getGalleryImages(p) {
+    const list = Array.isArray(p.images) && p.images.length ? p.images : [p.image];
+    return list.filter(Boolean).map(resolveImage);
+  }
 
   /* ---------------- toast ---------------- */
   let toastTimer;
@@ -389,9 +393,19 @@
     updateProductMeta(p);
     const soldOut = !!p.isSoldOut || p.stock === 0;
     const fav = isFavorite(p.id);
+    const gallery = getGalleryImages(p);
+    const galleryHTML = `
+      <div class="pd-image" id="pd-gallery">
+        <img id="pd-gallery-img" src="${gallery[0] || ''}" alt="${p.name}">
+        ${gallery.length > 1 ? `
+          <button type="button" class="pd-gallery-arrow prev" aria-label="前の画像"><i class="ri-arrow-left-s-line"></i></button>
+          <button type="button" class="pd-gallery-arrow next" aria-label="次の画像"><i class="ri-arrow-right-s-line"></i></button>
+          <div class="pd-gallery-dots">${gallery.map((_, i) => `<span class="pd-gallery-dot${i === 0 ? ' active' : ''}" data-idx="${i}"></span>`).join('')}</div>
+        ` : ''}
+      </div>`;
     root.innerHTML = `
       <div class="pd-grid">
-        <div class="pd-image"><img src="${resolveImage(p.image)}" alt="${p.name}"></div>
+        ${galleryHTML}
         <div>
           <p class="pd-eyebrow">${p.type === 'actual' ? '現物個体' : 'イメージ個体'}${(p.grade || p.rarity) ? ` ／ ${p.grade || p.rarity}` : ''}</p>
           <h1 class="pd-title">${p.name}</h1>
@@ -425,6 +439,31 @@
       this.classList.toggle('active', active);
       this.querySelector('i').className = active ? 'ri-heart-fill' : 'ri-heart-line';
     });
+    initProductGallery(gallery);
+  }
+
+  function initProductGallery(images) {
+    if (images.length <= 1) return;
+    const root = document.getElementById('pd-gallery');
+    const imgEl = document.getElementById('pd-gallery-img');
+    const dots = Array.from(root.querySelectorAll('.pd-gallery-dot'));
+    let index = 0;
+    function show(i) {
+      index = (i + images.length) % images.length;
+      imgEl.src = images[index];
+      dots.forEach((d, di) => d.classList.toggle('active', di === index));
+    }
+    root.querySelector('.pd-gallery-arrow.prev')?.addEventListener('click', () => show(index - 1));
+    root.querySelector('.pd-gallery-arrow.next')?.addEventListener('click', () => show(index + 1));
+    dots.forEach(d => d.addEventListener('click', () => show(parseInt(d.dataset.idx, 10))));
+    let touchStartX = null;
+    root.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    root.addEventListener('touchend', (e) => {
+      if (touchStartX == null) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 40) show(index + (dx < 0 ? 1 : -1));
+      touchStartX = null;
+    }, { passive: true });
   }
 
   /* ---------------- init ---------------- */

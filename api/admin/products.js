@@ -28,18 +28,20 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'POST') {
-    const { name, description, price, stock, image } = req.body || {};
+    const { name, description, price, stock, image, images } = req.body || {};
     if (!name || price == null || stock == null) {
       return res.status(400).json({ error: '名前・価格・在庫数は必須です' });
     }
     const products = await loadProducts();
+    const imageList = Array.isArray(images) ? images.map(String).filter(Boolean) : (image ? [String(image)] : []);
     const product = {
       id: genId(),
       name: String(name),
       description: description ? String(description) : '',
       price: Math.max(0, parseInt(price, 10) || 0),
       stock: Math.max(0, parseInt(stock, 10) || 0),
-      image: image ? String(image) : '',
+      image: imageList[0] || '',
+      images: imageList,
       active: true
     };
     products.push(product);
@@ -48,7 +50,7 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'PUT') {
-    const { id, name, description, price, stock, image, active } = req.body || {};
+    const { id, name, description, price, stock, image, images, active } = req.body || {};
     if (!id) return res.status(400).json({ error: 'idが必要です' });
     const products = await loadProducts();
     const p = products.find(p => p.id === id);
@@ -57,7 +59,13 @@ module.exports = async (req, res) => {
     if (description != null) p.description = String(description);
     if (price != null) p.price = Math.max(0, parseInt(price, 10) || 0);
     if (stock != null) p.stock = Math.max(0, parseInt(stock, 10) || 0);
-    if (image != null) p.image = String(image);
+    if (images != null) {
+      p.images = Array.isArray(images) ? images.map(String).filter(Boolean) : [];
+      p.image = p.images[0] || '';
+    } else if (image != null) {
+      p.image = String(image);
+      p.images = [p.image];
+    }
     if (active != null) p.active = !!active;
     await kv.set(KEY, products);
     return res.status(200).json({ product: p });

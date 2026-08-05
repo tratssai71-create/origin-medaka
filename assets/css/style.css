@@ -643,8 +643,16 @@ footer.site-footer { background: var(--bg-footer); border-top: 1px solid rgba(25
 /* ---------------- Product detail ---------------- */
 .pd-grid { display: grid; grid-template-columns: 1fr; gap: 40px; margin-top: 40px; }
 @media (min-width: 900px) { .pd-grid { grid-template-columns: 1fr 1fr; gap: 56px; } }
-.pd-image { aspect-ratio: 1/1; background: #141414; border: 1px solid rgba(255,255,255,0.14); overflow: hidden; }
-.pd-image img { width: 100%; height: 100%; object-fit: contain; }
+.pd-image { position: relative; aspect-ratio: 1/1; background: #141414; border: 1px solid rgba(255,255,255,0.14); overflow: hidden; touch-action: pan-y; }
+.pd-image img { width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+.pd-gallery-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,0.45); border: none; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; cursor: pointer; opacity: 0; transition: opacity 0.2s; z-index: 2; }
+.pd-image:hover .pd-gallery-arrow { opacity: 1; }
+.pd-gallery-arrow.prev { left: 12px; }
+.pd-gallery-arrow.next { right: 12px; }
+.pd-gallery-dots { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 7px; z-index: 2; }
+.pd-gallery-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.2s; }
+.pd-gallery-dot.active { background: var(--gold, #fff); width: 8px; height: 8px; }
+@media (max-width: 899px) { .pd-gallery-arrow { display: none; } }
 .pd-eyebrow { font-family: var(--font-display); font-size: 0.7rem; letter-spacing: 0.3em; color: var(--gold); margin-bottom: 14px; }
 .pd-title { font-family: var(--font-serif-jp); font-weight: 600; font-size: 1.7rem; color: var(--text-0); letter-spacing: 0.02em; margin-bottom: 12px; }
 .pd-en { font-family: var(--font-display); color: var(--text-4); font-size: 0.9rem; letter-spacing: 0.08em; margin-bottom: 20px; }
