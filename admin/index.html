@@ -198,6 +198,7 @@
 <script>
 (function () {
   let toastTimer;
+  let currentProducts = [];
   function toast(msg, isErr) {
     const el = document.getElementById('toast');
     el.textContent = msg;
@@ -305,11 +306,13 @@
 
   function rowHTML(p) {
     const imgSrc = resolveImage(p.image);
+    const imgCount = Array.isArray(p.images) ? p.images.length : (p.image ? 1 : 0);
     const img = imgSrc ? `<img src="${imgSrc}" alt="">` : '<div style="width:48px;height:48px;background:#222;border-radius:4px;"></div>';
     return `<tr data-id="${p.id}">
       <td>
-        <label class="img-upload" title="クリックして画像を変更（複数選択で全て差し替え）" style="cursor:pointer; display:inline-block;">
+        <label class="img-upload" title="クリックして画像を追加（既存の画像は残ります）" style="cursor:pointer; display:inline-block; position:relative;">
           ${img}
+          ${imgCount > 1 ? `<span style="position:absolute; top:-6px; right:-6px; background:var(--gold,#c9a24a); color:#000; font-size:0.65rem; font-weight:700; border-radius:10px; padding:1px 6px; line-height:1.4;">${imgCount}</span>` : ''}
           <input type="file" accept="image/*" class="row-image-file" multiple style="display:none;">
         </label>
       </td>
@@ -331,6 +334,7 @@
   async function loadProducts() {
     try {
       const { products } = await api('/api/admin/products');
+      currentProducts = products;
       const tbody = document.getElementById('product-rows');
       const emptyNote = document.getElementById('empty-note');
       if (!products.length) {
@@ -414,10 +418,13 @@
     if (!files.length) return;
     try {
       toast('画像をアップロード中...');
+      const product = currentProducts.find(p => p.id === id);
+      const existing = product ? (Array.isArray(product.images) ? product.images : (product.image ? [product.image] : [])) : [];
       const urls = [];
       for (const file of files) urls.push(await uploadImage(file));
-      await api('/api/admin/products', { method: 'PUT', body: JSON.stringify({ id, images: urls, image: urls[0] }) });
-      toast('画像を更新しました');
+      const combined = [...existing, ...urls];
+      await api('/api/admin/products', { method: 'PUT', body: JSON.stringify({ id, images: combined, image: combined[0] }) });
+      toast(`画像を追加しました（計${combined.length}枚）`);
       loadProducts();
     } catch (err) {
       toast(err.message, true);
