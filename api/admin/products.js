@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'POST') {
-    const { name, description, price, stock, image, images } = req.body || {};
+    const { name, description, price, stock, image, images, grade, bloodline, birthMonth, individualId, emotionalDescription } = req.body || {};
     if (!name || price == null || stock == null) {
       return res.status(400).json({ error: '名前・価格・在庫数は必須です' });
     }
@@ -42,6 +42,11 @@ module.exports = async (req, res) => {
       stock: Math.max(0, parseInt(stock, 10) || 0),
       image: imageList[0] || '',
       images: imageList,
+      grade: grade ? String(grade) : '',
+      bloodline: bloodline ? String(bloodline) : '',
+      birthMonth: birthMonth ? String(birthMonth) : '',
+      individualId: individualId ? String(individualId) : '',
+      emotionalDescription: emotionalDescription ? String(emotionalDescription) : '',
       active: true
     };
     products.push(product);
@@ -50,7 +55,7 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'PUT') {
-    const { id, name, description, price, stock, image, images, active } = req.body || {};
+    const { id, name, description, price, stock, image, images, active, grade, bloodline, birthMonth, individualId, emotionalDescription } = req.body || {};
     if (!id) return res.status(400).json({ error: 'idが必要です' });
     const products = await loadProducts();
     const p = products.find(p => p.id === id);
@@ -66,6 +71,11 @@ module.exports = async (req, res) => {
       p.image = String(image);
       p.images = [p.image];
     }
+    if (grade != null) p.grade = String(grade);
+    if (bloodline != null) p.bloodline = String(bloodline);
+    if (birthMonth != null) p.birthMonth = String(birthMonth);
+    if (individualId != null) p.individualId = String(individualId);
+    if (emotionalDescription != null) p.emotionalDescription = String(emotionalDescription);
     if (active != null) p.active = !!active;
     await kv.set(KEY, products);
     return res.status(200).json({ product: p });
