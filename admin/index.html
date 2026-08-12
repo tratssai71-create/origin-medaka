@@ -86,6 +86,12 @@
   .add-form { margin-top: 40px; }
   .add-form h2 { font-size: 1.05rem; margin: 0 0 20px; color: #fff; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .image-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .image-tile { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: hidden; background: #1a1a1a; }
+  .image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .image-remove-btn { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,0.75); color: #fff; border: none; font-size: 0.75rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .image-add-tile { width: 72px; height: 72px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.3); background: transparent; color: var(--text-3, #999); font-size: 1.4rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .image-add-tile:hover { border-color: var(--gold, #c9a24a); color: var(--gold, #c9a24a); }
   @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
   .toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -151,8 +157,8 @@
           </div>
           <div class="field">
             <label>画像（複数選択可）</label>
-            <input type="file" id="add-image-file" accept="image/*" multiple>
-            <div id="add-image-previews" style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;"></div>
+            <input type="file" id="add-image-file" accept="image/*" multiple style="display:none;">
+            <div id="add-image-previews" class="image-grid"></div>
           </div>
         </div>
         <div class="field">
@@ -509,8 +515,27 @@
 
   function renderAddImagePreviews() {
     const wrap = document.getElementById('add-image-previews');
-    wrap.innerHTML = addImages.map(url => `<img src="${url}" alt="" style="width:56px; height:56px; object-fit:cover; border-radius:4px;">`).join('');
+    const tiles = addImages.map((url, i) => `
+      <div class="image-tile">
+        <img src="${url}" alt="">
+        <button type="button" class="image-remove-btn" data-idx="${i}" aria-label="削除">×</button>
+      </div>
+    `).join('');
+    wrap.innerHTML = tiles + '<button type="button" class="image-add-tile" aria-label="画像を追加"><span>＋</span></button>';
   }
+  renderAddImagePreviews();
+
+  document.getElementById('add-image-previews').addEventListener('click', (e) => {
+    if (e.target.closest('.image-add-tile')) {
+      document.getElementById('add-image-file').click();
+      return;
+    }
+    const removeBtn = e.target.closest('.image-remove-btn');
+    if (removeBtn) {
+      addImages.splice(parseInt(removeBtn.dataset.idx, 10), 1);
+      renderAddImagePreviews();
+    }
+  });
 
   document.getElementById('add-image-file').addEventListener('change', async (e) => {
     const files = Array.from(e.target.files || []);
@@ -527,6 +552,7 @@
       errEl.textContent = err.message;
     } finally {
       addImageUploading = false;
+      e.target.value = '';
     }
   });
 

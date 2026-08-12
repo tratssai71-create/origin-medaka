@@ -47,6 +47,7 @@ module.exports = async (req, res) => {
       birthMonth: birthMonth ? String(birthMonth) : '',
       individualId: individualId ? String(individualId) : '',
       emotionalDescription: emotionalDescription ? String(emotionalDescription) : '',
+      createdAt: Date.now(),
       active: true
     };
     products.push(product);

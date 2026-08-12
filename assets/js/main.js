@@ -105,6 +105,11 @@
     });
   }
 
+  function isProductNew(p) {
+    if (typeof p.isNew === 'boolean') return p.isNew;
+    return !!(p.createdAt && (Date.now() - p.createdAt < 30 * 24 * 60 * 60 * 1000));
+  }
+
   /* ---------------- product card rendering ---------------- */
   function productCardHTML(p) {
     const soldOut = !!p.isSoldOut || p.stock === 0;
@@ -119,7 +124,7 @@
     return `<div class="product-card ${soldOut ? 'is-soldout' : ''}" data-product-card="${p.id}" data-goto="${BASE}product/index.html?id=${p.id}">
       <div class="thumb">
         <span class="type-tag">${p.type === 'actual' ? '現物' : 'イメージ'}</span>
-        ${p.isNew && !soldOut ? '<span class="new-tag">NEW</span>' : ''}
+        ${isProductNew(p) && !soldOut ? '<span class="new-tag">NEW</span>' : ''}
         <img src="${resolveImage(p.image)}" alt="${p.name}" loading="lazy">
         ${soldOut ? '<div class="soldout-overlay"><span><span class="line"></span>SOLD OUT<span class="line"></span></span></div>' : ''}
         <button class="card-fav-btn ${fav ? 'active' : ''}" data-fav-btn="${p.id}" aria-label="お気に入り">
@@ -471,7 +476,7 @@
     try {
       const res = await fetch(`${BASE}api/products`);
       const data = await res.json();
-      window.PRODUCTS = data.products || [];
+      window.PRODUCTS = (data.products || []).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     } catch (e) {
       window.PRODUCTS = window.PRODUCTS || [];
     }
