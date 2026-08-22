@@ -25,6 +25,11 @@
     const list = Array.isArray(p.images) && p.images.length ? p.images : [p.image];
     return list.filter(Boolean).map(resolveImage);
   }
+  function getGalleryMedia(p) {
+    const images = getGalleryImages(p).map(src => ({ type: 'image', src }));
+    const videos = (Array.isArray(p.videos) ? p.videos : []).filter(Boolean).map(resolveImage).map(src => ({ type: 'video', src }));
+    return images.concat(videos);
+  }
 
   /* ---------------- toast ---------------- */
   let toastTimer;
@@ -125,6 +130,7 @@
       <div class="thumb">
         <span class="type-tag">${p.type === 'actual' ? '現物' : 'イメージ'}</span>
         ${isProductNew(p) && !soldOut ? '<span class="new-tag">NEW</span>' : ''}
+        ${(Array.isArray(p.videos) && p.videos.length) ? '<span class="video-tag"><i class="ri-play-fill"></i></span>' : ''}
         <img src="${resolveImage(p.image)}" alt="${p.name}" loading="lazy">
         ${soldOut ? '<div class="soldout-overlay"><span><span class="line"></span>SOLD OUT<span class="line"></span></span></div>' : ''}
         <button class="card-fav-btn ${fav ? 'active' : ''}" data-fav-btn="${p.id}" aria-label="お気に入り">
@@ -398,11 +404,11 @@
     updateProductMeta(p);
     const soldOut = !!p.isSoldOut || p.stock === 0;
     const fav = isFavorite(p.id);
-    const gallery = getGalleryImages(p);
+    const gallery = getGalleryMedia(p);
     const galleryHTML = `
       <div class="pd-image" id="pd-gallery">
         <div class="pd-gallery-track" id="pd-gallery-track">
-          ${gallery.map(src => `<div class="pd-gallery-slide"><img src="${src}" alt="${p.name}"></div>`).join('')}
+          ${gallery.map(m => `<div class="pd-gallery-slide">${m.type === 'video' ? `<video src="${m.src}" controls playsinline preload="metadata"></video>` : `<img src="${m.src}" alt="${p.name}">`}</div>`).join('')}
         </div>
         ${gallery.length > 1 ? `
           <button type="button" class="pd-gallery-arrow prev" aria-label="前の画像"><i class="ri-arrow-left-s-line"></i></button>

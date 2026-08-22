@@ -92,6 +92,14 @@
   .image-remove-btn { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,0.75); color: #fff; border: none; font-size: 0.75rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .image-add-tile { width: 72px; height: 72px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.3); background: transparent; color: var(--text-3, #999); font-size: 1.4rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .image-add-tile:hover { border-color: var(--gold, #c9a24a); color: var(--gold, #c9a24a); }
+  .video-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .video-tile { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: hidden; background: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1px solid rgba(255,255,255,0.12); }
+  .video-tile i { font-size: 1.2rem; color: var(--gold, #c9a24a); }
+  .video-tile span { font-size: 0.55rem; color: var(--text-3, #999); max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .video-remove-btn { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,0.75); color: #fff; border: none; font-size: 0.75rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .video-add-tile { width: 72px; height: 72px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.3); background: transparent; color: var(--text-3, #999); font-size: 1.4rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .video-add-tile:hover { border-color: var(--gold, #c9a24a); color: var(--gold, #c9a24a); }
+  .field-hint { font-size: 0.68rem; color: var(--text-3, #999); margin-top: 4px; }
   @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
   .toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -160,6 +168,12 @@
             <input type="file" id="add-image-file" accept="image/*" multiple style="display:none;">
             <div id="add-image-previews" class="image-grid"></div>
           </div>
+        </div>
+        <div class="field">
+          <label>動画（複数選択可）</label>
+          <input type="file" id="add-video-file" accept="video/*" multiple style="display:none;">
+          <div id="add-video-previews" class="video-grid"></div>
+          <p class="field-hint">1本あたり3MBまで。数秒の短い動画を推奨します。</p>
         </div>
         <div class="field">
           <label>説明</label>
@@ -334,6 +348,32 @@
     return url;
   }
 
+  const MAX_VIDEO_BYTES = 3 * 1024 * 1024;
+
+  async function uploadVideo(file) {
+    if (file.size > MAX_VIDEO_BYTES) {
+      throw new Error(`「${file.name}」は3MBを超えています。短く撮影するか圧縮してから追加してください。`);
+    }
+    const dataBase64 = await fileToBase64(file);
+    const { url } = await api('/api/admin/upload', {
+      method: 'POST',
+      body: JSON.stringify({ filename: file.name, contentType: file.type, dataBase64 })
+    });
+    return url;
+  }
+
+  function videoTilesHTML(videos) {
+    const list = Array.isArray(videos) ? videos : [];
+    const tiles = list.map((url, i) => `
+      <div class="video-tile">
+        <i class="ri-play-circle-line"></i>
+        <span>${decodeURIComponent(url.split('/').pop() || '動画')}</span>
+        <button type="button" class="video-remove-btn" data-idx="${i}" aria-label="削除">×</button>
+      </div>
+    `).join('');
+    return tiles + '<button type="button" class="video-add-tile" aria-label="動画を追加"><span>＋</span></button>';
+  }
+
   function rowHTML(p) {
     const imgSrc = resolveImage(p.image);
     const imgCount = Array.isArray(p.images) ? p.images.length : (p.image ? 1 : 0);
@@ -385,6 +425,11 @@
         <div class="field">
           <label>この個体について（詳細ページに表示される紹介文）</label>
           <textarea rows="4" data-detail-field="emotionalDescription">${p.emotionalDescription || ''}</textarea>
+        </div>
+        <div class="field">
+          <label>動画（複数選択可、1本あたり3MBまで）</label>
+          <input type="file" accept="video/*" class="detail-video-file" multiple style="display:none;">
+          <div class="video-grid" data-detail-video-grid>${videoTilesHTML(p.videos)}</div>
         </div>
         <button type="button" class="btn-secondary detail-save-btn">詳細を保存</button>
       </td>
@@ -487,9 +532,50 @@
         toast(err.message, true);
       }
     }
+
+    if (e.target.closest('.video-add-tile')) {
+      tr.querySelector('.detail-video-file')?.click();
+      return;
+    }
+
+    const videoRemoveBtn = e.target.closest('.video-remove-btn');
+    if (videoRemoveBtn) {
+      const product = currentProducts.find(p => p.id === id);
+      const existing = product ? (Array.isArray(product.videos) ? product.videos.slice() : []) : [];
+      existing.splice(parseInt(videoRemoveBtn.dataset.idx, 10), 1);
+      try {
+        await api('/api/admin/products', { method: 'PUT', body: JSON.stringify({ id, videos: existing }) });
+        toast('動画を削除しました');
+        loadProducts();
+      } catch (err) {
+        toast(err.message, true);
+      }
+    }
   });
 
   document.getElementById('product-rows').addEventListener('change', async (e) => {
+    if (e.target.classList.contains('detail-video-file')) {
+      const tr = e.target.closest('tr');
+      const id = tr.dataset.detailFor;
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      try {
+        toast('動画をアップロード中...');
+        const product = currentProducts.find(p => p.id === id);
+        const existing = product ? (Array.isArray(product.videos) ? product.videos.slice() : []) : [];
+        const urls = [];
+        for (const file of files) urls.push(await uploadVideo(file));
+        const combined = [...existing, ...urls];
+        await api('/api/admin/products', { method: 'PUT', body: JSON.stringify({ id, videos: combined }) });
+        toast(`動画を追加しました（計${combined.length}本）`);
+        loadProducts();
+      } catch (err) {
+        toast(err.message, true);
+      } finally {
+        e.target.value = '';
+      }
+      return;
+    }
     if (!e.target.classList.contains('row-image-file')) return;
     const tr = e.target.closest('tr');
     const id = tr.dataset.id;
@@ -556,12 +642,55 @@
     }
   });
 
+  let addVideoUploading = false;
+  let addVideos = [];
+
+  function renderAddVideoPreviews() {
+    document.getElementById('add-video-previews').innerHTML = videoTilesHTML(addVideos);
+  }
+  renderAddVideoPreviews();
+
+  document.getElementById('add-video-previews').addEventListener('click', (e) => {
+    if (e.target.closest('.video-add-tile')) {
+      document.getElementById('add-video-file').click();
+      return;
+    }
+    const removeBtn = e.target.closest('.video-remove-btn');
+    if (removeBtn) {
+      addVideos.splice(parseInt(removeBtn.dataset.idx, 10), 1);
+      renderAddVideoPreviews();
+    }
+  });
+
+  document.getElementById('add-video-file').addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const errEl = document.getElementById('add-error');
+    errEl.textContent = '';
+    addVideoUploading = true;
+    try {
+      toast('動画をアップロード中...');
+      for (const file of files) addVideos.push(await uploadVideo(file));
+      renderAddVideoPreviews();
+      toast('動画をアップロードしました');
+    } catch (err) {
+      errEl.textContent = err.message;
+    } finally {
+      addVideoUploading = false;
+      e.target.value = '';
+    }
+  });
+
   document.getElementById('add-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errEl = document.getElementById('add-error');
     errEl.textContent = '';
     if (addImageUploading) {
       errEl.textContent = '画像のアップロードが完了するまでお待ちください。';
+      return;
+    }
+    if (addVideoUploading) {
+      errEl.textContent = '動画のアップロードが完了するまでお待ちください。';
       return;
     }
     const body = {
@@ -571,6 +700,7 @@
       stock: document.getElementById('add-stock').value,
       images: addImages,
       image: addImages[0] || '',
+      videos: addVideos,
       grade: document.getElementById('add-grade').value.trim(),
       bloodline: document.getElementById('add-bloodline').value.trim(),
       birthMonth: document.getElementById('add-birthMonth').value.trim(),
@@ -582,7 +712,9 @@
       toast('商品を追加しました');
       e.target.reset();
       addImages = [];
+      addVideos = [];
       renderAddImagePreviews();
+      renderAddVideoPreviews();
       loadProducts();
     } catch (err) {
       errEl.textContent = err.message;

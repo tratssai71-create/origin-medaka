@@ -28,12 +28,13 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'POST') {
-    const { name, description, price, stock, image, images, grade, bloodline, birthMonth, individualId, emotionalDescription } = req.body || {};
+    const { name, description, price, stock, image, images, videos, grade, bloodline, birthMonth, individualId, emotionalDescription } = req.body || {};
     if (!name || price == null || stock == null) {
       return res.status(400).json({ error: '名前・価格・在庫数は必須です' });
     }
     const products = await loadProducts();
     const imageList = Array.isArray(images) ? images.map(String).filter(Boolean) : (image ? [String(image)] : []);
+    const videoList = Array.isArray(videos) ? videos.map(String).filter(Boolean) : [];
     const product = {
       id: genId(),
       name: String(name),
@@ -42,6 +43,7 @@ module.exports = async (req, res) => {
       stock: Math.max(0, parseInt(stock, 10) || 0),
       image: imageList[0] || '',
       images: imageList,
+      videos: videoList,
       grade: grade ? String(grade) : '',
       bloodline: bloodline ? String(bloodline) : '',
       birthMonth: birthMonth ? String(birthMonth) : '',
@@ -56,7 +58,7 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'PUT') {
-    const { id, name, description, price, stock, image, images, active, grade, bloodline, birthMonth, individualId, emotionalDescription } = req.body || {};
+    const { id, name, description, price, stock, image, images, videos, active, grade, bloodline, birthMonth, individualId, emotionalDescription } = req.body || {};
     if (!id) return res.status(400).json({ error: 'idが必要です' });
     const products = await loadProducts();
     const p = products.find(p => p.id === id);
@@ -71,6 +73,9 @@ module.exports = async (req, res) => {
     } else if (image != null) {
       p.image = String(image);
       p.images = [p.image];
+    }
+    if (videos != null) {
+      p.videos = Array.isArray(videos) ? videos.map(String).filter(Boolean) : [];
     }
     if (grade != null) p.grade = String(grade);
     if (bloodline != null) p.bloodline = String(bloodline);
