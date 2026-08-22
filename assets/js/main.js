@@ -401,11 +401,14 @@
     const gallery = getGalleryImages(p);
     const galleryHTML = `
       <div class="pd-image" id="pd-gallery">
-        <img id="pd-gallery-img" src="${gallery[0] || ''}" alt="${p.name}">
+        <div class="pd-gallery-track" id="pd-gallery-track">
+          ${gallery.map(src => `<div class="pd-gallery-slide"><img src="${src}" alt="${p.name}"></div>`).join('')}
+        </div>
         ${gallery.length > 1 ? `
           <button type="button" class="pd-gallery-arrow prev" aria-label="前の画像"><i class="ri-arrow-left-s-line"></i></button>
           <button type="button" class="pd-gallery-arrow next" aria-label="次の画像"><i class="ri-arrow-right-s-line"></i></button>
           <div class="pd-gallery-dots">${gallery.map((_, i) => `<span class="pd-gallery-dot${i === 0 ? ' active' : ''}" data-idx="${i}"></span>`).join('')}</div>
+          <div class="pd-gallery-count">1 / ${gallery.length}</div>
         ` : ''}
       </div>`;
     root.innerHTML = `
@@ -448,27 +451,62 @@
   }
 
   function initProductGallery(images) {
-    if (images.length <= 1) return;
     const root = document.getElementById('pd-gallery');
-    const imgEl = document.getElementById('pd-gallery-img');
+    const track = document.getElementById('pd-gallery-track');
+    if (!root || !track) return;
+    if (images.length <= 1) return;
     const dots = Array.from(root.querySelectorAll('.pd-gallery-dot'));
+    const countEl = root.querySelector('.pd-gallery-count');
     let index = 0;
-    function show(i) {
-      index = (i + images.length) % images.length;
-      imgEl.src = images[index];
-      dots.forEach((d, di) => d.classList.toggle('active', di === index));
+    let width = root.clientWidth;
+    let dragging = false;
+    let startX = 0;
+    let dragDx = 0;
+
+    function setTrackTransition(on) {
+      track.style.transition = on ? 'transform 0.3s ease' : 'none';
     }
-    root.querySelector('.pd-gallery-arrow.prev')?.addEventListener('click', () => show(index - 1));
-    root.querySelector('.pd-gallery-arrow.next')?.addEventListener('click', () => show(index + 1));
-    dots.forEach(d => d.addEventListener('click', () => show(parseInt(d.dataset.idx, 10))));
-    let touchStartX = null;
-    root.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
-    root.addEventListener('touchend', (e) => {
-      if (touchStartX == null) return;
-      const dx = e.changedTouches[0].clientX - touchStartX;
-      if (Math.abs(dx) > 40) show(index + (dx < 0 ? 1 : -1));
-      touchStartX = null;
-    }, { passive: true });
+    function goTo(i, animate) {
+      index = Math.max(0, Math.min(images.length - 1, i));
+      setTrackTransition(animate !== false);
+      track.style.transform = `translateX(${-index * width}px)`;
+      dots.forEach((d, di) => d.classList.toggle('active', di === index));
+      if (countEl) countEl.textContent = `${index + 1} / ${images.length}`;
+    }
+    window.addEventListener('resize', () => { width = root.clientWidth; goTo(index, false); });
+
+    root.querySelector('.pd-gallery-arrow.prev')?.addEventListener('click', () => goTo(index - 1));
+    root.querySelector('.pd-gallery-arrow.next')?.addEventListener('click', () => goTo(index + 1));
+    dots.forEach(d => d.addEventListener('click', () => goTo(parseInt(d.dataset.idx, 10))));
+
+    function onStart(clientX) {
+      dragging = true;
+      startX = clientX;
+      dragDx = 0;
+      setTrackTransition(false);
+    }
+    function onMove(clientX) {
+      if (!dragging) return;
+      dragDx = clientX - startX;
+      track.style.transform = `translateX(${-index * width + dragDx}px)`;
+    }
+    function onEnd() {
+      if (!dragging) return;
+      dragging = false;
+      if (Math.abs(dragDx) > width * 0.18) {
+        goTo(index + (dragDx < 0 ? 1 : -1));
+      } else {
+        goTo(index);
+      }
+    }
+    root.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX), { passive: true });
+    root.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX), { passive: true });
+    root.addEventListener('touchend', onEnd, { passive: true });
+    root.addEventListener('mousedown', (e) => { e.preventDefault(); onStart(e.clientX); });
+    window.addEventListener('mousemove', (e) => onMove(e.clientX));
+    window.addEventListener('mouseup', onEnd);
+
+    goTo(0, false);
   }
 
   /* ---------------- init ---------------- */
