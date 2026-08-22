@@ -35,13 +35,14 @@ module.exports = async (req, res) => {
     const products = await loadProducts();
     const imageList = Array.isArray(images) ? images.map(String).filter(Boolean) : (image ? [String(image)] : []);
     const videoList = Array.isArray(videos) ? videos.map(String).filter(Boolean) : [];
+    const thumb = (image && imageList.includes(String(image))) ? String(image) : (imageList[0] || '');
     const product = {
       id: genId(),
       name: String(name),
       description: description ? String(description) : '',
       price: Math.max(0, parseInt(price, 10) || 0),
       stock: Math.max(0, parseInt(stock, 10) || 0),
-      image: imageList[0] || '',
+      image: thumb,
       images: imageList,
       videos: videoList,
       grade: grade ? String(grade) : '',
@@ -69,10 +70,15 @@ module.exports = async (req, res) => {
     if (stock != null) p.stock = Math.max(0, parseInt(stock, 10) || 0);
     if (images != null) {
       p.images = Array.isArray(images) ? images.map(String).filter(Boolean) : [];
-      p.image = p.images[0] || '';
+      p.image = (image && p.images.includes(String(image))) ? String(image) : (p.images[0] || '');
     } else if (image != null) {
-      p.image = String(image);
-      p.images = [p.image];
+      const current = Array.isArray(p.images) ? p.images : (p.image ? [p.image] : []);
+      if (current.includes(String(image))) {
+        p.image = String(image);
+      } else {
+        p.image = String(image);
+        p.images = [p.image];
+      }
     }
     if (videos != null) {
       p.videos = Array.isArray(videos) ? videos.map(String).filter(Boolean) : [];

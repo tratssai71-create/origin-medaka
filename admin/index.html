@@ -94,8 +94,11 @@
   .image-add-tile:hover { border-color: var(--gold, #c9a24a); color: var(--gold, #c9a24a); }
   .video-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .video-tile { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: hidden; background: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1px solid rgba(255,255,255,0.12); }
-  .video-tile i { font-size: 1.2rem; color: var(--gold, #c9a24a); }
-  .video-tile span { font-size: 0.55rem; color: var(--text-3, #999); max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .video-tile-icon { font-size: 1.2rem; color: var(--gold, #c9a24a); line-height: 1; }
+  .video-tile-name { font-size: 0.55rem; color: var(--text-3, #999); max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .image-star-btn { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.75); color: rgba(255,255,255,0.6); border: none; font-size: 0.85rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .image-star-btn.active { color: var(--gold, #c9a24a); }
+  .image-tile.is-thumb { outline: 2px solid var(--gold, #c9a24a); outline-offset: 1px; }
   .video-remove-btn { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,0.75); color: #fff; border: none; font-size: 0.75rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .video-add-tile { width: 72px; height: 72px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.3); background: transparent; color: var(--text-3, #999); font-size: 1.4rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .video-add-tile:hover { border-color: var(--gold, #c9a24a); color: var(--gold, #c9a24a); }
@@ -362,12 +365,24 @@
     return url;
   }
 
+  function imageTilesHTML(images, thumb) {
+    const list = Array.isArray(images) ? images : [];
+    const tiles = list.map((url, i) => `
+      <div class="image-tile${url === thumb ? ' is-thumb' : ''}">
+        <img src="${url}" alt="">
+        <button type="button" class="image-star-btn${url === thumb ? ' active' : ''}" data-idx="${i}" aria-label="サムネイルに設定" title="サムネイルに設定">★</button>
+        <button type="button" class="image-remove-btn" data-idx="${i}" aria-label="削除">×</button>
+      </div>
+    `).join('');
+    return tiles + '<button type="button" class="image-add-tile" aria-label="画像を追加"><span>＋</span></button>';
+  }
+
   function videoTilesHTML(videos) {
     const list = Array.isArray(videos) ? videos : [];
     const tiles = list.map((url, i) => `
       <div class="video-tile">
-        <i class="ri-play-circle-line"></i>
-        <span>${decodeURIComponent(url.split('/').pop() || '動画')}</span>
+        <span class="video-tile-icon">▶</span>
+        <span class="video-tile-name">${decodeURIComponent(url.split('/').pop() || '動画')}</span>
         <button type="button" class="video-remove-btn" data-idx="${i}" aria-label="削除">×</button>
       </div>
     `).join('');
@@ -425,6 +440,11 @@
         <div class="field">
           <label>この個体について（詳細ページに表示される紹介文）</label>
           <textarea rows="4" data-detail-field="emotionalDescription">${p.emotionalDescription || ''}</textarea>
+        </div>
+        <div class="field">
+          <label>画像・サムネイル（★で一覧に表示する画像を選択）</label>
+          <input type="file" accept="image/*" class="detail-image-file" multiple style="display:none;">
+          <div class="image-grid" data-detail-image-grid>${imageTilesHTML(p.images, p.image)}</div>
         </div>
         <div class="field">
           <label>動画（複数選択可、1本あたり3MBまで）</label>
@@ -550,10 +570,70 @@
       } catch (err) {
         toast(err.message, true);
       }
+      return;
+    }
+
+    if (e.target.closest('.image-add-tile')) {
+      tr.querySelector('.detail-image-file')?.click();
+      return;
+    }
+
+    const imgStarBtn = e.target.closest('.image-star-btn');
+    if (imgStarBtn) {
+      const product = currentProducts.find(p => p.id === id);
+      const existing = product ? (Array.isArray(product.images) ? product.images.slice() : []) : [];
+      const chosen = existing[parseInt(imgStarBtn.dataset.idx, 10)];
+      if (chosen) {
+        try {
+          await api('/api/admin/products', { method: 'PUT', body: JSON.stringify({ id, images: existing, image: chosen }) });
+          toast('サムネイルを変更しました');
+          loadProducts();
+        } catch (err) {
+          toast(err.message, true);
+        }
+      }
+      return;
+    }
+
+    const imgRemoveBtn = e.target.closest('.image-remove-btn');
+    if (imgRemoveBtn && tr.classList.contains('detail-row')) {
+      const product = currentProducts.find(p => p.id === id);
+      const existing = product ? (Array.isArray(product.images) ? product.images.slice() : []) : [];
+      const removed = existing.splice(parseInt(imgRemoveBtn.dataset.idx, 10), 1)[0];
+      const wasThumb = product && product.image === removed;
+      try {
+        await api('/api/admin/products', { method: 'PUT', body: JSON.stringify({ id, images: existing, image: wasThumb ? (existing[0] || '') : product.image }) });
+        toast('画像を削除しました');
+        loadProducts();
+      } catch (err) {
+        toast(err.message, true);
+      }
     }
   });
 
   document.getElementById('product-rows').addEventListener('change', async (e) => {
+    if (e.target.classList.contains('detail-image-file')) {
+      const tr = e.target.closest('tr');
+      const id = tr.dataset.detailFor;
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      try {
+        toast('画像をアップロード中...');
+        const product = currentProducts.find(p => p.id === id);
+        const existing = product ? (Array.isArray(product.images) ? product.images.slice() : (product.image ? [product.image] : [])) : [];
+        const urls = [];
+        for (const file of files) urls.push(await uploadImage(file));
+        const combined = [...existing, ...urls];
+        await api('/api/admin/products', { method: 'PUT', body: JSON.stringify({ id, images: combined, image: product.image || combined[0] }) });
+        toast(`画像を追加しました（計${combined.length}枚）`);
+        loadProducts();
+      } catch (err) {
+        toast(err.message, true);
+      } finally {
+        e.target.value = '';
+      }
+      return;
+    }
     if (e.target.classList.contains('detail-video-file')) {
       const tr = e.target.closest('tr');
       const id = tr.dataset.detailFor;
@@ -598,12 +678,14 @@
 
   let addImageUploading = false;
   let addImages = [];
+  let addThumbIdx = 0;
 
   function renderAddImagePreviews() {
     const wrap = document.getElementById('add-image-previews');
     const tiles = addImages.map((url, i) => `
-      <div class="image-tile">
+      <div class="image-tile${i === addThumbIdx ? ' is-thumb' : ''}">
         <img src="${url}" alt="">
+        <button type="button" class="image-star-btn${i === addThumbIdx ? ' active' : ''}" data-idx="${i}" aria-label="サムネイルに設定" title="サムネイルに設定">★</button>
         <button type="button" class="image-remove-btn" data-idx="${i}" aria-label="削除">×</button>
       </div>
     `).join('');
@@ -616,9 +698,18 @@
       document.getElementById('add-image-file').click();
       return;
     }
+    const starBtn = e.target.closest('.image-star-btn');
+    if (starBtn) {
+      addThumbIdx = parseInt(starBtn.dataset.idx, 10);
+      renderAddImagePreviews();
+      return;
+    }
     const removeBtn = e.target.closest('.image-remove-btn');
     if (removeBtn) {
-      addImages.splice(parseInt(removeBtn.dataset.idx, 10), 1);
+      const idx = parseInt(removeBtn.dataset.idx, 10);
+      addImages.splice(idx, 1);
+      if (idx === addThumbIdx) addThumbIdx = 0;
+      else if (idx < addThumbIdx) addThumbIdx -= 1;
       renderAddImagePreviews();
     }
   });
@@ -699,7 +790,7 @@
       price: document.getElementById('add-price').value,
       stock: document.getElementById('add-stock').value,
       images: addImages,
-      image: addImages[0] || '',
+      image: addImages[addThumbIdx] || addImages[0] || '',
       videos: addVideos,
       grade: document.getElementById('add-grade').value.trim(),
       bloodline: document.getElementById('add-bloodline').value.trim(),
@@ -712,6 +803,7 @@
       toast('商品を追加しました');
       e.target.reset();
       addImages = [];
+      addThumbIdx = 0;
       addVideos = [];
       renderAddImagePreviews();
       renderAddVideoPreviews();
