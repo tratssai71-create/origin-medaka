@@ -274,7 +274,10 @@
       ...options
     });
     const data = await res.json().catch(() => ({}));
-    if (res.status === 401) { showLogin(); throw new Error('セッションが切れました。再度ログインしてください。'); }
+    if (res.status === 401) {
+      showLogin();
+      throw new Error(data.error || 'セッションが切れました。再度ログインしてください。');
+    }
     if (!res.ok) throw new Error(data.error || 'エラーが発生しました');
     return data;
   }
