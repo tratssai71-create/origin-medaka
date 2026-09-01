@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 
 const COOKIE_NAME = 'om_admin_session';
-const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
+const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 function secret() {
   const s = process.env.ADMIN_SESSION_SECRET;
